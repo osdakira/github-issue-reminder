@@ -1,0 +1,10 @@
+github:
+  repo_name: osdakira/github-issue-reminder
+  # users or [org,team_slug]
+  users:
+    - osdakira
+  # org: osdakira
+  # team_slug:
+number_of_minutes_dating_back: 120
+reminder_stop_key: '[ok]'
+reminder_message_template: '%<mention_to>s from github-auto-reminder'
