@@ -20,12 +20,14 @@ end
 
 def fetch_issues_comments(sort: 'created', direction: 'asc', since: nil)
   since ||= make_since_time
-  client.issues_comments(
+  issues_comments = client.issues_comments(
     github_config['repo_name'],
     sort: sort,
     direction: direction,
     since: since,
   )
+  insert_last_fetch_at
+  issues_comments
 end
 
 def extract_communication_comments(issues_comments)
@@ -127,11 +129,21 @@ def notify(unreplied_comment_rows)
 end
 
 def make_reminder_message(mention_to)
-  format(config['reminder_message_template'], mention_to: mention_to)
+  format(
+    config['reminder_message_template'],
+    mention_to: mention_to,
+    reminder_stop_key: reminder_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
+  )
 end
 
 def db
   db = SQLite3::Database.new('./issues_comments.sqlite3')
+  create_table_issues_comments(db)
+  create_table_fetchs(db)
+  db
+end
+
+def create_table_issues_comments(db)
   create_sql = <<-"SQL"
     CREATE TABLE IF NOT EXISTS issues_comments (
       id integer primary key autoincrement,
@@ -140,7 +152,6 @@ def db
     );
   SQL
   db.execute(create_sql)
-  db
 end
 
 def columns
@@ -151,6 +162,16 @@ def columns
     mention_to: 'TEXT',
     replied: 'INTEGER',
   }.freeze
+end
+
+def create_table_fetchs(db)
+  create_sql = <<-"SQL"
+    CREATE TABLE IF NOT EXISTS fetchs (
+      id integer primary key autoincrement,
+      fetch_at text
+    );
+  SQL
+  db.execute(create_sql)
 end
 
 def users
@@ -168,8 +189,24 @@ def fetch_team_members(org, team_slug)
 end
 
 def make_since_time
-  minutes = config['number_of_minutes_dating_back'].to_i
-  (Time.now - (60 * minutes)).utc.iso8601
+  last_fetch_at = fetch_last_fetch_at
+  return last_fetch_at if last_fetch_at
+
+  one_minute_ago
+end
+
+def fetch_last_fetch_at
+  sql = 'SELECT fetch_at FROM fetchs ORDER BY id DESC;'
+  db.get_first_value(sql)
+end
+
+def insert_last_fetch_at
+  update = 'INSERT INTO fetchs(fetch_at) VALUES(?);'
+  db.query(update, [one_minute_ago])
+end
+
+def one_minute_ago
+  (Time.now - 60).utc.iso8601
 end
 
 def client
