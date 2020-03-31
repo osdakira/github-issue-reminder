@@ -132,6 +132,11 @@ end
 
 def db
   db = SQLite3::Database.new('./issues_comments.sqlite3')
+  create_table_issues_comments(db)
+  db
+end
+
+def create_table_issues_comments(db)
   create_sql = <<-"SQL"
     CREATE TABLE IF NOT EXISTS issues_comments (
       id integer primary key autoincrement,
@@ -140,7 +145,6 @@ def db
     );
   SQL
   db.execute(create_sql)
-  db
 end
 
 def columns
