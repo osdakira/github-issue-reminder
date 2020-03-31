@@ -20,12 +20,14 @@ end
 
 def fetch_issues_comments(sort: 'created', direction: 'asc', since: nil)
   since ||= make_since_time
-  client.issues_comments(
+  issues_comments = client.issues_comments(
     github_config['repo_name'],
     sort: sort,
     direction: direction,
     since: since,
   )
+  insert_last_fetch_at
+  issues_comments
 end
 
 def extract_communication_comments(issues_comments)
@@ -133,6 +135,7 @@ end
 def db
   db = SQLite3::Database.new('./issues_comments.sqlite3')
   create_table_issues_comments(db)
+  create_table_fetchs(db)
   db
 end
 
@@ -157,6 +160,16 @@ def columns
   }.freeze
 end
 
+def create_table_fetchs(db)
+  create_sql = <<-"SQL"
+    CREATE TABLE IF NOT EXISTS fetchs (
+      id integer primary key autoincrement,
+      fetch_at text
+    );
+  SQL
+  db.execute(create_sql)
+end
+
 def users
   if github_config['org'] && github_config['team_slug']
     fetch_team_members(github_config['org'], github_config['team_slug'])
@@ -172,8 +185,24 @@ def fetch_team_members(org, team_slug)
 end
 
 def make_since_time
-  minutes = config['number_of_minutes_dating_back'].to_i
-  (Time.now - (60 * minutes)).utc.iso8601
+  last_fetch_at = fetch_last_fetch_at
+  return last_fetch_at if last_fetch_at
+
+  one_minute_ago
+end
+
+def fetch_last_fetch_at
+  sql = 'SELECT fetch_at FROM fetchs ORDER BY id DESC;'
+  db.get_first_value(sql)
+end
+
+def insert_last_fetch_at
+  update = 'INSERT INTO fetchs(fetch_at) VALUES(?);'
+  db.query(update, [one_minute_ago])
+end
+
+def one_minute_ago
+  (Time.now - 60).utc.iso8601
 end
 
 def client
