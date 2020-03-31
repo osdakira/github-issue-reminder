@@ -210,8 +210,9 @@ def one_minute_ago
 end
 
 def client
+  access_token = ENV['GITHUB_ACCESS_TOKEN'] || github_config['access_token']
   @client ||= Octokit::Client.new(
-    access_token: ENV['GITHUB_ACCESS_TOKEN'],
+    access_token: access_token,
     auto_paginate: true,
   )
 end
