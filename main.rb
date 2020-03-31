@@ -129,7 +129,11 @@ def notify(unreplied_comment_rows)
 end
 
 def make_reminder_message(mention_to)
-  format(config['reminder_message_template'], mention_to: mention_to)
+  format(
+    config['reminder_message_template'],
+    mention_to: mention_to,
+    reminder_stop_key: reminder_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
+  )
 end
 
 def db

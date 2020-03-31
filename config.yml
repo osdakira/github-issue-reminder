@@ -6,4 +6,4 @@ github:
   # org: osdakira
   # team_slug:
 reminder_stop_key: '[ok]'
-reminder_message_template: '%<mention_to>s from github-auto-reminder'
+reminder_message_template: '%<mention_to>s from github-auto-reminder. You should reply with mention or write comment with %<reminder_stop_key>s'
