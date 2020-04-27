@@ -32,8 +32,11 @@ end
 
 def extract_communication_comments(issues_comments)
   pickup_keys = users.map { |x| "@#{x.login}" } + [reminder_stop_key]
-  issues_comments.select do |comment|
+  mentioned_comments = issues_comments.select do |comment|
     pickup_keys.any? { |key| comment.body.include?(key) }
+  end
+  mentioned_comments.reject do |comment|
+    comment.body.include?(reminder_bot_message)
   end
 end
 
@@ -227,6 +230,10 @@ end
 
 def config
   @config ||= YAML.load_file('./config.yml')
+end
+
+def reminder_bot_message
+  @reminder_bot_message ||= make_reminder_message('')
 end
 
 main if $PROGRAM_NAME == __FILE__
