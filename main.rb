@@ -88,8 +88,9 @@ def update_comments_to_replied # rubocop:disable Metrics/MethodLength
     WHERE id IN (
       SELECT c1.id
       FROM issues_comments c1
-      JOIN issues_comments c2 on c1.mention_from = c2.mention_to
+      JOIN issues_comments c2 on c1.issue_url = c2.issue_url
       WHERE c1.replied = 0
+        AND c1.mention_from = c2.mention_to
         AND c1.created_at < c2.created_at
     );
   SQL
@@ -151,7 +152,7 @@ def create_table_issues_comments(db)
     CREATE TABLE IF NOT EXISTS issues_comments (
       id integer primary key autoincrement,
       #{columns.map { |k, v| "#{k} #{v}" }.join(',')},
-      unique(issue_url, created_at, mention_from)
+      unique(issue_url, created_at, mention_from, mention_to)
     );
   SQL
   db.execute(create_sql)
