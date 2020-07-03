@@ -8,11 +8,11 @@ require 'yaml'
 def main
   issues_comments = fetch_issues_comments
   communication_comments = extract_communication_comments(issues_comments)
-  return if communication_comments.empty?
-
-  insert_comments(communication_comments)
-  update_comments_to_replied
-  update_comments_to_done
+  unless communication_comments.empty?
+    insert_comments(communication_comments)
+    update_comments_to_replied
+    update_comments_to_done
+  end
 
   unreplied_comment_rows = fetch_unreplied_comments
   notify(unreplied_comment_rows)
