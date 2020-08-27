@@ -31,7 +31,7 @@ def fetch_issues_comments(sort: 'created', direction: 'asc', since: nil)
 end
 
 def extract_communication_comments(issues_comments)
-  pickup_keys = users.map { |x| "@#{x.login}" } + [reminder_stop_key]
+  pickup_keys = users.map { |x| "@#{x.login}" } + [reminder_stop_key, reminder_all_stop_key]
   mentioned_comments = issues_comments.select do |comment|
     pickup_keys.any? { |key| comment.body.include?(key) }
   end
@@ -57,8 +57,8 @@ def group_by_mention_to(communication_comments)
       [mention_to, comment]
     end
 
-    if comment.body.include?(reminder_stop_key)
-      mention_to_and_comments = [[reminder_stop_key, comment]]
+    if comment.body.include?(reminder_all_stop_key)
+      mention_to_and_comments = [[reminder_all_stop_key, comment]]
     end
 
     mention_to_and_comments
@@ -68,7 +68,7 @@ end
 def make_values(mention_to_and_comments) # rubocop:disable Metrics/MethodLength
   mention_to_and_comments.map do |mention_to, comment|
     mention_from = "@#{comment.user.login}"
-    replied = mention_to == reminder_stop_key ? 1 : 0
+    replied = mention_to == reminder_all_stop_key ? 1 : 0
     <<-"SQL"
       (
         '#{comment.issue_url}',
@@ -105,7 +105,7 @@ def update_comments_to_done # rubocop:disable Metrics/MethodLength
       SELECT c1.id
       FROM issues_comments c1
       JOIN issues_comments c2 on c1.issue_url = c2.issue_url
-      WHERE c2.mention_to = '#{reminder_stop_key}'
+      WHERE c2.mention_to = '#{reminder_all_stop_key}'
         AND c1.created_at < c2.created_at
     );
   SQL
