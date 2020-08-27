@@ -12,6 +12,7 @@ def main
     insert_comments(communication_comments)
     update_comments_to_replied
     update_comments_to_done
+    update_comments_to_stop_my_reminder
   end
 
   unreplied_comment_rows = fetch_unreplied_comments
@@ -55,6 +56,10 @@ def group_by_mention_to(communication_comments)
   communication_comments.flat_map do |comment|
     mention_to_and_comments = comment.body.scan(/@\S+/).map do |mention_to|
       [mention_to, comment]
+    end
+
+    if comment.body.include?(reminder_stop_key)
+      mention_to_and_comments += [[reminder_stop_key, comment]]
     end
 
     if comment.body.include?(reminder_all_stop_key)
@@ -108,6 +113,23 @@ def update_comments_to_done # rubocop:disable Metrics/MethodLength
       WHERE c1.created_at < c2.created_at
         AND c1.replied = 0
         AND c2.mention_to = '#{reminder_all_stop_key}'
+    );
+  SQL
+  db.execute(update)
+end
+
+def update_comments_to_stop_my_reminder
+  update = <<-"SQL"
+    UPDATE issues_comments
+    SET replied = 1
+    WHERE id IN (
+      SELECT c1.id
+      FROM issues_comments c1
+      JOIN issues_comments c2 on c1.issue_url = c2.issue_url
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
+        AND c2.mention_to = '#{reminder_stop_key}'
+        AND c2.mention_from = c1.mention_to
     );
   SQL
   db.execute(update)
