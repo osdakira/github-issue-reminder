@@ -165,7 +165,7 @@ def make_reminder_message(mention_to)
 end
 
 def db
-  db = SQLite3::Database.new('./issues_comments.sqlite3')
+  db = SQLite3::Database.new(config['db_name'])
   create_table_issues_comments(db)
   create_table_fetchs(db)
   db
