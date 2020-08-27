@@ -32,7 +32,7 @@ def fetch_issues_comments(sort: 'created', direction: 'asc', since: nil)
 end
 
 def extract_communication_comments(issues_comments)
-  pickup_keys = users.map { |x| "@#{x.login}" } + [reminder_stop_key, reminder_all_stop_key]
+  pickup_keys = users.map { |x| "@#{x.login}" } + reminder_controller_keys
   mentioned_comments = issues_comments.select do |comment|
     pickup_keys.any? { |key| comment.body.include?(key) }
   end
@@ -255,6 +255,10 @@ end
 
 def reminder_all_stop_key
   config['reminder_all_stop_key']
+end
+
+def reminder_controller_keys
+  [reminder_stop_key, reminder_all_stop_key]
 end
 
 def config
