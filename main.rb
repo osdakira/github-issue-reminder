@@ -12,6 +12,7 @@ def main
     insert_comments(communication_comments)
     update_comments_to_replied
     update_comments_to_done
+    update_comments_to_stop_my_reminder
   end
 
   unreplied_comment_rows = fetch_unreplied_comments
@@ -31,7 +32,7 @@ def fetch_issues_comments(sort: 'created', direction: 'asc', since: nil)
 end
 
 def extract_communication_comments(issues_comments)
-  pickup_keys = users.map { |x| "@#{x.login}" } + [reminder_stop_key]
+  pickup_keys = users.map { |x| "@#{x.login}" } + reminder_controller_keys
   mentioned_comments = issues_comments.select do |comment|
     pickup_keys.any? { |key| comment.body.include?(key) }
   end
@@ -58,7 +59,11 @@ def group_by_mention_to(communication_comments)
     end
 
     if comment.body.include?(reminder_stop_key)
-      mention_to_and_comments = [[reminder_stop_key, comment]]
+      mention_to_and_comments += [[reminder_stop_key, comment]]
+    end
+
+    if comment.body.include?(reminder_all_stop_key)
+      mention_to_and_comments = [[reminder_all_stop_key, comment]]
     end
 
     mention_to_and_comments
@@ -68,7 +73,7 @@ end
 def make_values(mention_to_and_comments) # rubocop:disable Metrics/MethodLength
   mention_to_and_comments.map do |mention_to, comment|
     mention_from = "@#{comment.user.login}"
-    replied = mention_to == reminder_stop_key ? 1 : 0
+    replied = reminder_controller_keys.include?(mention_to) ? 1 : 0
     <<-"SQL"
       (
         '#{comment.issue_url}',
@@ -89,9 +94,9 @@ def update_comments_to_replied # rubocop:disable Metrics/MethodLength
       SELECT c1.id
       FROM issues_comments c1
       JOIN issues_comments c2 on c1.issue_url = c2.issue_url
-      WHERE c1.replied = 0
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
         AND c1.mention_from = c2.mention_to
-        AND c1.created_at < c2.created_at
     );
   SQL
   db.execute(update)
@@ -105,8 +110,26 @@ def update_comments_to_done # rubocop:disable Metrics/MethodLength
       SELECT c1.id
       FROM issues_comments c1
       JOIN issues_comments c2 on c1.issue_url = c2.issue_url
-      WHERE c2.mention_to = '#{reminder_stop_key}'
-        AND c1.created_at < c2.created_at
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
+        AND c2.mention_to = '#{reminder_all_stop_key}'
+    );
+  SQL
+  db.execute(update)
+end
+
+def update_comments_to_stop_my_reminder
+  update = <<-"SQL"
+    UPDATE issues_comments
+    SET replied = 1
+    WHERE id IN (
+      SELECT c1.id
+      FROM issues_comments c1
+      JOIN issues_comments c2 on c1.issue_url = c2.issue_url
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
+        AND c2.mention_to = '#{reminder_stop_key}'
+        AND c2.mention_from = c1.mention_to
     );
   SQL
   db.execute(update)
@@ -137,11 +160,12 @@ def make_reminder_message(mention_to)
     config['reminder_message_template'],
     mention_to: mention_to,
     reminder_stop_key: reminder_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
+    reminder_all_stop_key: reminder_all_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
   )
 end
 
 def db
-  db = SQLite3::Database.new('./issues_comments.sqlite3')
+  db = SQLite3::Database.new(config['db_name'])
   create_table_issues_comments(db)
   create_table_fetchs(db)
   db
@@ -227,6 +251,14 @@ end
 
 def reminder_stop_key
   config['reminder_stop_key']
+end
+
+def reminder_all_stop_key
+  config['reminder_all_stop_key']
+end
+
+def reminder_controller_keys
+  [reminder_stop_key, reminder_all_stop_key]
 end
 
 def config
