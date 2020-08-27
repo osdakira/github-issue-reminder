@@ -73,7 +73,7 @@ end
 def make_values(mention_to_and_comments) # rubocop:disable Metrics/MethodLength
   mention_to_and_comments.map do |mention_to, comment|
     mention_from = "@#{comment.user.login}"
-    replied = mention_to == reminder_all_stop_key ? 1 : 0
+    replied = reminder_controller_keys.include?(mention_to) ? 1 : 0
     <<-"SQL"
       (
         '#{comment.issue_url}',
