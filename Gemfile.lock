@@ -17,6 +17,7 @@ GEM
     parallel (1.19.1)
     parser (2.7.0.5)
       ast (~> 2.4.0)
+    power_assert (1.2.0)
     pry (0.13.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -39,6 +40,8 @@ GEM
       addressable (>= 2.3.5)
       faraday (> 0.8, < 2.0)
     sqlite3 (1.4.2)
+    test-unit (3.3.6)
+      power_assert
     unicode-display_width (1.6.1)
 
 PLATFORMS
@@ -50,6 +53,7 @@ DEPENDENCIES
   pry-byebug
   rubocop
   sqlite3
+  test-unit
 
 BUNDLED WITH
    1.17.2
