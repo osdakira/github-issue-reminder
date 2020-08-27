@@ -89,9 +89,9 @@ def update_comments_to_replied # rubocop:disable Metrics/MethodLength
       SELECT c1.id
       FROM issues_comments c1
       JOIN issues_comments c2 on c1.issue_url = c2.issue_url
-      WHERE c1.replied = 0
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
         AND c1.mention_from = c2.mention_to
-        AND c1.created_at < c2.created_at
     );
   SQL
   db.execute(update)
@@ -105,8 +105,9 @@ def update_comments_to_done # rubocop:disable Metrics/MethodLength
       SELECT c1.id
       FROM issues_comments c1
       JOIN issues_comments c2 on c1.issue_url = c2.issue_url
-      WHERE c2.mention_to = '#{reminder_all_stop_key}'
-        AND c1.created_at < c2.created_at
+      WHERE c1.created_at < c2.created_at
+        AND c1.replied = 0
+        AND c2.mention_to = '#{reminder_all_stop_key}'
     );
   SQL
   db.execute(update)
