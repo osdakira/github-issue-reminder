@@ -137,6 +137,7 @@ def make_reminder_message(mention_to)
     config['reminder_message_template'],
     mention_to: mention_to,
     reminder_stop_key: reminder_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
+    reminder_all_stop_key: reminder_all_stop_key.sub('[', '&#91;').sub(']', '&#93;'),
   )
 end
 
@@ -227,6 +228,10 @@ end
 
 def reminder_stop_key
   config['reminder_stop_key']
+end
+
+def reminder_all_stop_key
+  config['reminder_all_stop_key']
 end
 
 def config

@@ -7,4 +7,5 @@ github:
   # org: osdakira
   # team_slug:
 reminder_stop_key: '[ok]'
-reminder_message_template: '%<mention_to>s from github-auto-reminder. You should reply with mention or write comment with %<reminder_stop_key>s'
+reminder_all_stop_key: '[no-reminder]'
+reminder_message_template: "%<mention_to>s from github-auto-reminder. You should reply with mention or write comment with %<reminder_stop_key>s. (If you stop someone else's reminder, write %<reminder_all_stop_key>s)"
