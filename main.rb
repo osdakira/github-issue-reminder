@@ -54,7 +54,7 @@ end
 
 def group_by_mention_to(communication_comments)
   communication_comments.flat_map do |comment|
-    mention_to_and_comments = comment.body.scan(/@\S+/).map do |mention_to|
+    mention_to_and_comments = comment.body.scan(/@[\w-]+/).map do |mention_to|
       [mention_to, comment]
     end
 
